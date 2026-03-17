@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.student import Student
 from app.schemas.auth_schema import RegisterSchema, LoginSchema
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
+from app.core.security import decode_refresh_token, hash_password, verify_password, create_access_token, create_refresh_token
 from app.database import get_db
 
 router= APIRouter()
@@ -45,5 +45,21 @@ def login(user: LoginSchema, db: Session= Depends(get_db)):
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+@router.post("/refresh")
+def refresh_token(refresh_token: str):
+    payload= decode_refresh_token(refresh_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    
+    new_access_token= create_access_token({
+        "sub": payload["sub"],
+        "user_id": payload["user_id"]
+    })
+
+    return{
+        "access_token": new_access_token,
         "token_type": "bearer"
     }
