@@ -48,6 +48,7 @@ def login(user: LoginSchema, db: Session= Depends(get_db)):
         "token_type": "bearer"
     }
 
+# REFRESH REFRESH_TOKEN
 @router.post("/refresh")
 def refresh_token(refresh_token: str):
     payload= decode_refresh_token(refresh_token)
