@@ -7,3 +7,7 @@ from enum import Enum
 class StudentStatusEnum(str, Enum):
     active="active"
     onleave= "onLeave"
+
+class AttendanceStatusEnum(str, Enum):
+    pending= "pending"
+    marked= "marked"
