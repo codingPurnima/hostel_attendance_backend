@@ -11,3 +11,13 @@ class StudentStatusEnum(str, Enum):
 class AttendanceStatusEnum(str, Enum):
     pending= "pending"
     marked= "marked"
+
+class LeaveStatusEnum(str, Enum):
+    approved= "approved"
+    rejected= "rejected"
+    pending= "pending"
+    
+class EarlyReturnRequestEnum(str, Enum):
+    approved= "approved"
+    rejected= "rejected"
+    pending= "pending"

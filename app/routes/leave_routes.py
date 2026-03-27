@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.leave_request import LeaveRequest
 from app.models.return_request import ReturnRequest
 from app.core.security import get_current_user
+from app.models import enums
 
 router= APIRouter()
 
@@ -16,6 +17,14 @@ def request_leave(
     current_user= Depends(get_current_user),
     db: Session= Depends(get_db)
 ):
+    existing= db.query(LeaveRequest).filter(
+        LeaveRequest.student_id== current_user.id,
+        LeaveRequest.status== enums.LeaveStatusEnum.pending
+    ).first()
+    
+    if existing:
+        return {"error": "Request exists"}
+    
     leave= LeaveRequest(
         student_id= current_user.id,
         start_date= start_date,
@@ -25,7 +34,7 @@ def request_leave(
     db.add(leave)
     db.commit()
 
-    return{"message": "Leave request submitted"}
+    return{"message": "Leave request submitted. Pending."}
 
 
 @router.post("/early-return")
@@ -40,4 +49,4 @@ def early_return(
     db.add(request)
     db.commit()
 
-    return {"message": "Return request submitted"}
+    return {"message": "Return request submitted. Pending."}
