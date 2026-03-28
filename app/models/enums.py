@@ -11,6 +11,7 @@ class StudentStatusEnum(str, Enum):
 class AttendanceStatusEnum(str, Enum):
     pending= "pending"
     marked= "marked"
+    absent= "absent"
 
 class LeaveStatusEnum(str, Enum):
     approved= "approved"
