@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import auth_routes,face_routes, test_routes, attendance_routes, leave_routes, warden_routes
+from app.routes import auth_routes,face_routes, test_routes, attendance_routes, leave_routes, warden_routes, student_routes
 from app.database import Base, engine
 from app.models import student
 
@@ -10,6 +10,7 @@ app.include_router(face_routes.router, prefix="/face", tags=["Face"])
 app.include_router(attendance_routes.router, tags=["Attendance"])
 app.include_router(leave_routes.router, tags=["Leave"])
 app.include_router(warden_routes.router, prefix='/warden', tags=['Warden Routes'])
+app.include_router(student_routes.router, prefix="/student", tags=["Student Routes"])
 
 Base.metadata.create_all(bind=engine) 
 # creates table only if it does not exist, does not modify existing table, like it won't change columns or add or remove them
