@@ -33,11 +33,11 @@ def login(user: LoginSchema, db: Session= Depends(get_db)):
     db_user = db.query(Student).filter(Student.email == user.email).first()
 
     if not db_user:
-        return {"error": "Invalid email"}
-
+        raise HTTPException(status_code= 401, detail="Invalid email")
+    
 # order of parameters matters
     if not verify_password(user.password, db_user.hashed_password ): 
-        return {"error": "Invalid password"}
+        raise HTTPException(status_code= 401, detail="Invalid password")
 
     access_token = create_access_token({"sub": db_user.email, "user_id": db_user.id})
     refresh_token= create_refresh_token({"sub": db_user.email, "user_id": db_user.id})
@@ -45,7 +45,12 @@ def login(user: LoginSchema, db: Session= Depends(get_db)):
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer", 
+        "user":{
+            "id": db_user.id,
+            "email": db_user.email,
+            "has_face_registered": db_user.face_embedding is not None
+        }
     }
 
 # REFRESH REFRESH_TOKEN
