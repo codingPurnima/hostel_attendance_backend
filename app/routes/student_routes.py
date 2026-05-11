@@ -9,6 +9,7 @@ router = APIRouter()
 @router.get("/profile")
 def get_profile(current_user= Depends(get_current_user)):
     return {
+        "name": current_user.name,
         "id": current_user.id,
         "room": current_user.room,
         "email": current_user.email,
