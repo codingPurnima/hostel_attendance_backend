@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 import ast
@@ -11,14 +11,14 @@ from app.core.security import get_current_user
 from app.services.face_service import generate_embedding
 from app.models.enums import StudentStatusEnum
 
-router = APIRouter(prefix="/attendance", tags=["Attendance"])
+router = APIRouter(tags=["Attendance"])
 
-THRESHOLD = 0.6
+THRESHOLD = 0.75
 
 @router.post("/mark")
 async def mark_attendance(
     file: UploadFile = File(...),
-    ssid: str = "",   # currently connected ssid coming from frontend later
+    ssid: str = Form(...),   # currently connected ssid coming from frontend later
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -31,33 +31,55 @@ async def mark_attendance(
     ).first()
 
     if existing:
-        return {"error": "Attendance already marked"}
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Attendance already marked"
+        )
 
     # Check student status
     if current_user.status != StudentStatusEnum.active:
-        return {"error": "Attendance not allowed"}
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Attendance not allowed"
+        )
 
     # Get settings
     settings = db.query(Settings).first()
 
     if not settings:
-        return {"error": "Settings not configured"}
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Settings not configured"
+        )
 
     # Time check
     now = datetime.now().time()
     if not (settings.start_time <= now <= settings.end_time):
-        return {"error": "Outside attendance time window"}
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Outside attendance time window"
+        )
 
     # WiFi check
-    if ssid != settings.wifi_ssid:
-        return {"error": "Not connected to hostel WiFi"}
+    # temporarily include AndroidWifi
+    allowed_ssids=[settings.wifi_ssid, "AndroidWifi"]
+    if ssid not in allowed_ssids:
+        print("FRONTEND SSID:", repr(ssid))
+        print("DB SSID:", repr(settings.wifi_ssid))
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not connected to hostel WiFi"
+        )
 
     # Face verification
     image_bytes = await file.read()
     new_embedding = generate_embedding(image_bytes)
 
     if new_embedding is None:
-        return {"error": "Face not detected"}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Face not detected"
+        )
 
     stored_embedding = ast.literal_eval(current_user.face_embedding)
 
@@ -67,7 +89,10 @@ async def mark_attendance(
     similarity = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
 
     if similarity < THRESHOLD:
-        return {"error": "Face does not match"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Face does not match"
+        )
 
     # Mark attendance
     new_attendance = Attendance(
