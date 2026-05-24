@@ -6,6 +6,6 @@ class Attendance(Base):
     __tablename__ = "attendance"
 
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("students.id"))
+    student_id = Column(Integer, ForeignKey("users.id"))
     date = Column(Date)
     timestamp = Column(DateTime, default=datetime.utcnow)
