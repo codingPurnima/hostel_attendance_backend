@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date
 
 from app.database import get_db
 from app.models.leave_request import LeaveRequest
 from app.models.return_request import ReturnRequest
-from app.models.student import Student
+from app.models.user import User
 from app.models import enums
 from app.models.attendance import Attendance
+from app.core.security import require_warden
 
-router= APIRouter()
+router= APIRouter(dependencies=[Depends(require_warden)])
 
 @router.post("/approve-leave/{leave_id}")
 def approve_leave(
@@ -18,11 +19,11 @@ def approve_leave(
 ):
     leave= db.query(LeaveRequest).filter(LeaveRequest.id== leave_id).first()
     if not leave:
-        return {"error": "Leave not found"}
+        raise HTTPException(status_code=404, detail="Leave not found")
     
     leave.status= enums.LeaveStatusEnum.approved
 
-    student= db.query(Student).filter(Student.id== leave.student_id).first()
+    student= db.query(User).filter(User.id== leave.student_id).first()
     student.status= enums.StudentStatusEnum.onleave
 
     db.commit()
@@ -35,9 +36,9 @@ def reject_leave(leave_id: int, db: Session = Depends(get_db)):
     leave = db.query(LeaveRequest).filter(LeaveRequest.id == leave_id).first()
 
     if not leave:
-        return {"error": "Leave not found"}
+        raise HTTPException(status_code=404, detail="Leave not found")
 
-    leave.status = "REJECTED"
+    leave.status = enums.LeaveStatusEnum.rejected
 
     db.commit()
 
@@ -50,11 +51,11 @@ def approve_return(request_id: int, db: Session = Depends(get_db)):
     req = db.query(ReturnRequest).filter(ReturnRequest.id == request_id).first()
 
     if not req:
-        return {"error": "Request not found"}
+        raise HTTPException(status_code=404, detail="Leave not found")
 
     req.status = enums.EarlyReturnRequestEnum.approved
 
-    student = db.query(Student).filter(Student.id == req.student_id).first()
+    student = db.query(User).filter(User.id == req.student_id).first()
     student.status = enums.StudentStatusEnum.active
 
     db.commit()
@@ -65,7 +66,7 @@ def approve_return(request_id: int, db: Session = Depends(get_db)):
 def get_students(
     db: Session= Depends(get_db)
 ):
-    students= db.query(Student).all()
+    students= db.query(User).all()
 
     return[
         {
@@ -81,7 +82,7 @@ def get_students(
 def today_attendance(db: Session = Depends(get_db)):
     today = date.today()
 
-    students= db.query(Student).all()
+    students= db.query(User).all()
     records = db.query(Attendance).filter(Attendance.date == today).all()
 
     present_ids= {a.student_id for a in records}
