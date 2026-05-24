@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-from app.models.student import Student
+from app.models.user import User
 from app.schemas.auth_schema import RegisterSchema, LoginSchema
 from app.core.security import decode_refresh_token, hash_password, verify_password, create_access_token, create_refresh_token
 from app.database import get_db
@@ -11,11 +11,11 @@ router= APIRouter()
 # REGISTER RESIDENT
 @router.post("/register", status_code=201)
 def register_student(user: RegisterSchema, db: Session= Depends(get_db)):
-    existing= db.query(Student).filter(Student.email== user.email).first()
+    existing= db.query(User).filter(User.email== user.email).first()
     if existing:
         raise HTTPException(status_code=400, detail='User exists already')
     
-    new_user= Student(
+    new_user= User(
     #   table attributes= parameters being passed by user in the format of Register schema
         name= user.name,
         room= user.room,
@@ -30,7 +30,7 @@ def register_student(user: RegisterSchema, db: Session= Depends(get_db)):
 # RESIDENT LOGIN
 @router.post("/login")
 def login(user: LoginSchema, db: Session= Depends(get_db)):
-    db_user = db.query(Student).filter(Student.email == user.email).first()
+    db_user = db.query(User).filter(User.email == user.email).first()
 
     if not db_user:
         raise HTTPException(status_code= 401, detail="Invalid email")
@@ -39,7 +39,7 @@ def login(user: LoginSchema, db: Session= Depends(get_db)):
     if not verify_password(user.password, db_user.hashed_password ): 
         raise HTTPException(status_code= 401, detail="Invalid password")
 
-    access_token = create_access_token({"sub": db_user.email, "user_id": db_user.id})
+    access_token = create_access_token({"sub": db_user.email, "user_id": db_user.id, "role": db_user.role.value})
     refresh_token= create_refresh_token({"sub": db_user.email, "user_id": db_user.id})
 
     return {
@@ -49,6 +49,7 @@ def login(user: LoginSchema, db: Session= Depends(get_db)):
         "user":{
             "id": db_user.id,
             "email": db_user.email,
+            "role": db_user.role,
             "has_face_registered": db_user.face_embedding is not None
         }
     }
