@@ -7,11 +7,11 @@ import numpy as np
 from app.database import get_db
 from app.models.attendance import Attendance
 from app.models.settings import Settings
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_resident
 from app.services.face_service import generate_embedding
 from app.models.enums import StudentStatusEnum
 
-router = APIRouter(tags=["Attendance"])
+router = APIRouter(tags=["Attendance"], dependencies=[Depends(require_resident)])
 
 THRESHOLD = 0.75
 
@@ -21,7 +21,7 @@ async def mark_attendance(
     ssid: str = Form(...),   # currently connected ssid coming from frontend later
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+):    
     # Check if already marked today
     today = date.today()
 

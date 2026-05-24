@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_resident
 from app.models.attendance import Attendance
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_resident)])
 
 @router.get("/profile")
 def get_profile(current_user= Depends(get_current_user)):
