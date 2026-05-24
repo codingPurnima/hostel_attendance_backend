@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, Form
+from fastapi import APIRouter, UploadFile, File, Depends, Form, HTTPException
 from typing import List
 from app.core.security import get_current_user
 from app.services.face_service import generate_embedding
@@ -15,6 +15,52 @@ async def register_face(
     current_user= Depends(get_current_user),
     db= Depends(get_db)
 ):
+    image_bytes= await file.read()
+    embedding= generate_embedding(image_bytes)
+    if embedding is None:
+        return {"error": "No valid face detected"}
+    current_user.face_embedding= str(embedding)
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    
+    return{"message": "Face registered successfully"}
+# , description="Upload multiple images", media_type="multipart/form-data"
+
+# VERIFY USER IMAGE DURING ATTENDANCE
+@router.post("/verify")
+async def verify_face(
+    file: UploadFile= File(...),
+    current_user= Depends(get_current_user)
+):
+# GENERATE EMBEDDING FOR CAPTURED IMAGE 
+    image_bytes= await file.read()
+    new_embedding= generate_embedding(image_bytes)
+    if new_embedding is None:
+        raise HTTPException(
+            status_code=400, detail="Face not detected"
+        )
+    
+# ACCESS FROM DATABASE 
+    stored_embedding= ast.literal_eval(current_user.face_embedding)
+
+    emb1= np.array(new_embedding)
+    emb2= np.array(stored_embedding)
+
+# COSINE SIMILARITY
+    similarity= np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
+
+    THRESHOLD= 0.75
+    is_match= bool(similarity> THRESHOLD)
+
+    return{
+        "match": bool(is_match),
+        "similarity": float(similarity)
+    }
+
+
+# PART OF REGISTER ENDPOINT- INPUT MULTIPLE FILES WASN'T WORKING WITH SWAGGER, SO SKIPPED FOR THE TIME BEING, ADD LATER
     # embeddings= []
 
     # for file in files:
@@ -32,45 +78,3 @@ async def register_face(
 
     # db.add(current_user)
     # db.commit()
-
-
-    image_bytes= await file.read()
-    embedding= generate_embedding(image_bytes)
-    if embedding is None:
-        return {"error": "No valid face detected"}
-    current_user.face_embedding= str(embedding)
-
-    db.add(current_user)
-    db.commit()
-    
-    return{"message": "Face registered successfully"}
-# , description="Upload multiple images", media_type="multipart/form-data"
-
-# VERIFY USER IMAGE DURING ATTENDANCE
-@router.post("/verify")
-async def verify_face(
-    file: UploadFile= File(...),
-    current_user= Depends(get_current_user)
-):
-# GENERATE EMBEDDING FOR CAPTURED IMAGE 
-    image_bytes= await file.read()
-    new_embedding= generate_embedding(image_bytes)
-    if new_embedding is None:
-        return {"error": "Face not detected"}
-    
-# ACCESS FROM DATABASE 
-    stored_embedding= ast.literal_eval(current_user.face_embedding)
-
-    emb1= np.array(new_embedding)
-    emb2= np.array(stored_embedding)
-
-# COSINE SIMILARITY
-    similarity= np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
-
-    THRESHOLD= 0.6
-    is_match= bool(similarity> THRESHOLD)
-
-    return{
-        "match": bool(is_match),
-        "similarity": float(similarity)
-    }
