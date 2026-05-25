@@ -5,15 +5,15 @@ from datetime import date
 from app.database import get_db
 from app.models.leave_request import LeaveRequest
 from app.models.return_request import ReturnRequest
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_resident
 from app.models import enums
+from app.schemas.leave_schema import LeaveResponse, CreateLeave
 
-router= APIRouter()
+router= APIRouter(dependencies=[Depends(require_resident)])
 
-@router.post("/leave-request")
+@router.post("/leave-request", response_model=LeaveResponse)
 def request_leave(
-    start_date: date,
-    end_date: date,
+    payload: CreateLeave,
     current_user= Depends(get_current_user),
     db: Session= Depends(get_db)
 ):
@@ -27,15 +27,27 @@ def request_leave(
     
     leave= LeaveRequest(
         student_id= current_user.id,
-        start_date= start_date,
-        end_date= end_date
+        start_date= payload.start_date,
+        end_date= payload.end_date,
+        reason= payload.reason
     )
 
     db.add(leave)
     db.commit()
+    db.refresh(leave)
 
-    return{"message": "Leave request submitted. Pending."}
+    return leave
 
+@router.get("/my-leaves", response_model=list[LeaveResponse])
+def get_my_leaves(
+    current_user= Depends(get_current_user),
+    db: Session= Depends(get_db)
+):
+    leaves= db.query(LeaveRequest).filter(
+        LeaveRequest.student_id== current_user.id
+    ).order_by(LeaveRequest.created_at.desc()).all()
+
+    return leaves
 
 @router.post("/early-return")
 def early_return(
