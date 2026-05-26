@@ -8,7 +8,7 @@ class LeaveRequest(Base):
     __tablename__ = "leave_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("students.id"))
+    student_id = Column(Integer, ForeignKey("users.id"))
     start_date = Column(Date)
     end_date = Column(Date)
     status = Column(Enum(LeaveStatusEnum), default=LeaveStatusEnum.pending)
