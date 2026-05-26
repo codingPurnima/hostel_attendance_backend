@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from datetime import date
 
@@ -8,7 +8,7 @@ from app.models.return_request import ReturnRequest
 from app.models.user import User
 from app.models import enums
 from app.models.attendance import Attendance
-from app.core.security import require_warden
+from app.core.security import get_current_user, require_warden
 
 router= APIRouter(dependencies=[Depends(require_warden)])
 
@@ -64,9 +64,10 @@ def approve_return(request_id: int, db: Session = Depends(get_db)):
 
 @router.get("/students")
 def get_students(
+    current_user= Depends(get_current_user),
     db: Session= Depends(get_db)
 ):
-    students= db.query(User).all()
+    students= db.query(User).filter(User.id!= current_user.id).all()
 
     return[
         {
@@ -79,10 +80,10 @@ def get_students(
     ]
 
 @router.get("/attendance/today")
-def today_attendance(db: Session = Depends(get_db)):
+def today_attendance(current_user= Depends(get_current_user), db: Session = Depends(get_db)):
     today = date.today()
 
-    students= db.query(User).all()
+    students= db.query(User).filter(User.id!= current_user.id).all()
     records = db.query(Attendance).filter(Attendance.date == today).all()
 
     present_ids= {a.student_id for a in records}
@@ -99,8 +100,8 @@ def today_attendance(db: Session = Depends(get_db)):
 
 
 @router.get("/attendance/all")
-def all_attendance(db: Session = Depends(get_db)):
-    records = db.query(Attendance).all()
+def all_attendance(current_user= Depends(get_current_user), db: Session = Depends(get_db)):
+    records = db.query(Attendance).filter(Attendance.student_id != current_user.id).all()
 
     return [
         {
@@ -113,18 +114,21 @@ def all_attendance(db: Session = Depends(get_db)):
 
 @router.get("/leave-requests")
 def get_leave_requests(db: Session = Depends(get_db)):
-    requests = db.query(LeaveRequest).all()
+    requests = (db.query(LeaveRequest, User)
+    .join(User, LeaveRequest.student_id== User.id)
+    .all())
 
     return [
-        {
-            "id": r.id,
-            "student_id": r.student_id,
-            "start_date": r.start_date,
-            "end_date": r.end_date,
-            "status": r.status
-        }
-        for r in requests
-    ]
+    {
+        "id": leave.id,
+        "student_id": leave.student_id,
+        "student_name": user.name,
+        "start_date": leave.start_date,
+        "end_date": leave.end_date,
+        "status": leave.status,
+    }
+    for leave, user in requests
+]
 
 
 @router.get("/return-requests")
