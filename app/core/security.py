@@ -2,12 +2,13 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from app.core.config import settings
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, get_db
-from app.models.student import Student
+from app.models.user import User
+from app.models.enums import RoleEnum
 
 SECRET_KEY= settings.SECRET_KEY
 ALGORITHM= settings.ALGORITHM
@@ -49,25 +50,63 @@ def decode_refresh_token(token: str):
         return payload
     except JWTError:
         return None
-    
 def get_current_user(
-        credentials: HTTPAuthorizationCredentials= Depends(security),
-        db: Session= Depends(get_db)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
 ):
-    token= credentials.credentials
+    token = credentials.credentials
+
+    print("TOKEN RECEIVED:", token)
+
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+
+        print("PAYLOAD:", payload)
+
         user_id = payload.get("user_id")
 
         if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token"
+            )
 
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError as e:
+        print("JWT ERROR:", str(e))
 
-    user = db.query(Student).filter(Student.id == user_id).first()
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )
+
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
 
     if user is None:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(
+            status_code=401,
+            detail="User not found"
+        )
 
     return user
+
+def require_warden(current_user= Depends(get_current_user)):
+    if current_user.role != RoleEnum.warden:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only wardens can access this"
+        )
+    return current_user
+
+def require_resident(current_user= Depends(get_current_user)):
+    if current_user.role!= RoleEnum.student:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only residents can access this"
+        )
+    return current_user
