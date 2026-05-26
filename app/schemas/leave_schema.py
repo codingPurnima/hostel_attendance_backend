@@ -17,3 +17,8 @@ class LeaveResponse(BaseModel):
     status: str
     
     model_config= ConfigDict(from_attributes= True)
+
+class CancelLeaveRequest(BaseModel):
+    id: int
+
+    model_config= ConfigDict(from_attributes=True)
