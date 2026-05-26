@@ -51,17 +51,17 @@ def get_my_leaves(
 
 @router.delete("/cancel-leave/{leave_id}")
 def cancel_leave(
-    request: CancelLeaveRequest,
+    leave_id: int,
     db: Session= Depends(get_db),
     current_user= Depends(get_current_user)
 ):
     leave= db.query(LeaveRequest).filter(
-        LeaveRequest.id== request.id,
+        LeaveRequest.id== leave_id,
         LeaveRequest.student_id== current_user.id
     ).first()
 
     if not leave:
-        raise HTTPException(status_code=404, details= "Leave not found")
+        raise HTTPException(status_code=404, detail= "Leave not found")
     
     if leave.status!= enums.LeaveStatusEnum.pending:
         raise HTTPException(status_code=400, detail= "Only pending requests can be cancelled")
