@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date
 
@@ -7,7 +7,7 @@ from app.models.leave_request import LeaveRequest
 from app.models.return_request import ReturnRequest
 from app.core.security import get_current_user, require_resident
 from app.models import enums
-from app.schemas.leave_schema import LeaveResponse, CreateLeave
+from app.schemas.leave_schema import LeaveResponse, CreateLeave, CancelLeaveRequest
 
 router= APIRouter(dependencies=[Depends(require_resident)])
 
@@ -23,7 +23,7 @@ def request_leave(
     ).first()
     
     if existing:
-        return {"error": "Request exists"}
+        raise HTTPException(status_code=409, detail= "Can't create new leave while one is pending")
     
     leave= LeaveRequest(
         student_id= current_user.id,
@@ -48,6 +48,29 @@ def get_my_leaves(
     ).order_by(LeaveRequest.created_at.desc()).all()
 
     return leaves
+
+@router.delete("/cancel-leave/{leave_id}")
+def cancel_leave(
+    request: CancelLeaveRequest,
+    db: Session= Depends(get_db),
+    current_user= Depends(get_current_user)
+):
+    leave= db.query(LeaveRequest).filter(
+        LeaveRequest.id== request.id,
+        LeaveRequest.student_id== current_user.id
+    ).first()
+
+    if not leave:
+        raise HTTPException(status_code=404, details= "Leave not found")
+    
+    if leave.status!= enums.LeaveStatusEnum.pending:
+        raise HTTPException(status_code=400, detail= "Only pending requests can be cancelled")
+    
+    leave.status= enums.LeaveStatusEnum.cancelled
+
+    db.commit()
+
+    return {"message": "Leave cancelled successfully"}
 
 @router.post("/early-return")
 def early_return(
