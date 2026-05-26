@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, Date, String, DateTime, Enum
 from datetime import datetime, UTC
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 from app.models.enums import AttendanceStatusEnum, LeaveStatusEnum
 
@@ -14,3 +15,5 @@ class LeaveRequest(Base):
     status = Column(Enum(LeaveStatusEnum), default=LeaveStatusEnum.pending)
     reason= Column(String, nullable=False)
     created_at= Column(DateTime(timezone=True), server_default=func.now())
+
+    student= relationship("User")
