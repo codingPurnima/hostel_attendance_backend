@@ -1,8 +1,8 @@
 from enum import Enum
 
-# class RoleEnum(str, Enum):
-#     warden= "warden"
-#     resident= "resident"
+class RoleEnum(str, Enum):
+    warden= "warden"
+    student= "student"
 
 class StudentStatusEnum(str, Enum):
     active="active"
@@ -17,6 +17,7 @@ class LeaveStatusEnum(str, Enum):
     approved= "approved"
     rejected= "rejected"
     pending= "pending"
+    cancelled= "cancelled"
     
 class EarlyReturnRequestEnum(str, Enum):
     approved= "approved"
