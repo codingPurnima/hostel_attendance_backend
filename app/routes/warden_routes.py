@@ -21,7 +21,19 @@ def approve_leave(
     if not leave:
         raise HTTPException(status_code=404, detail="Leave not found")
     
-    leave.status= enums.LeaveStatusEnum.approved
+    if leave.status == enums.LeaveStatusEnum.approved:
+        raise HTTPException(
+            status_code=400,
+            detail="Leave request is already approved"
+        )
+    
+    if leave.status == enums.LeaveStatusEnum.rejected:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot approve a rejected leave request"
+        )
+    
+    leave.status = enums.LeaveStatusEnum.approved
 
     student= db.query(User).filter(User.id== leave.student_id).first()
     student.status= enums.StudentStatusEnum.onleave
@@ -37,8 +49,18 @@ def reject_leave(leave_id: int, db: Session = Depends(get_db)):
 
     if not leave:
         raise HTTPException(status_code=404, detail="Leave not found")
+    
+    if leave.status == enums.LeaveStatusEnum.rejected:
+        raise HTTPException(
+            status_code=400,
+            detail="Leave request is already rejected"
+        )
 
-    leave.status = enums.LeaveStatusEnum.rejected
+    if leave.status == enums.LeaveStatusEnum.approved:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot reject an approved leave request"
+        )
 
     db.commit()
 
