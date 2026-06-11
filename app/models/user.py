@@ -12,4 +12,4 @@ class User(Base):
     status = Column(Enum(StudentStatusEnum), default=StudentStatusEnum.active, nullable= False)
     penalty_count = Column(Integer, default=0)
     face_embedding= Column(String, nullable=False)
-    role= Column(Enum(RoleEnum), nullable=False)
+    role= Column(Enum(RoleEnum),default=RoleEnum.student, nullable=False)
