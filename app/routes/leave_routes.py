@@ -77,6 +77,37 @@ def early_return(
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+
+    today= date.today()
+
+    active_leave= db.query(LeaveRequest).filter(
+        LeaveRequest.student_id== current_user.id,
+        LeaveRequest.status== enums.LeaveStatusEnum.approved,
+        LeaveRequest.start_date<= today,
+        LeaveRequest.end_date>= today
+    ).first()
+
+    if not active_leave:
+        raise HTTPException(
+            status_code=400,
+            detail="No active leave found. Early return can only be requested during an active leave period."
+        )
+    
+    existing_request = (
+        db.query(ReturnRequest)
+        .filter(
+            ReturnRequest.student_id == current_user.id,
+            ReturnRequest.status == enums.LeaveStatusEnum.pending
+        )
+        .first()
+    )
+
+    if existing_request:
+        raise HTTPException(
+            status_code=400,
+            detail="An early return request is already pending."
+        )
+    
     request = ReturnRequest(
         student_id=current_user.id
     )
