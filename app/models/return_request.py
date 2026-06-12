@@ -7,6 +7,6 @@ class ReturnRequest(Base):
     __tablename__ = "return_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("students.id"))
+    student_id = Column(Integer, ForeignKey("users.id"))
     request_date= Column(Date, default=date.today)
     status = Column(String(50), default=AttendanceStatusEnum.pending)
