@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Time, String
+from sqlalchemy import JSON, Column, Integer, Time, String
 from app.database import Base
 
 class Settings(Base):
@@ -7,4 +7,4 @@ class Settings(Base):
     id = Column(Integer, primary_key=True, index=True)
     start_time = Column(Time)
     end_time = Column(Time)
-    wifi_ssid = Column(String(100))
+    wifi_ssid = Column(JSON)
