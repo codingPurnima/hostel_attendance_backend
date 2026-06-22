@@ -12,7 +12,6 @@ def generate_embedding(image_bytes):
         # generate embedding
         result = DeepFace.represent(
             img_path = img,
-            model_name = "ArcFace",
             enforce_detection = True
         )
 
