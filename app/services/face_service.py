@@ -1,11 +1,3 @@
-import tensorflow as tf
-
-print("=" * 60)
-print("TensorFlow version:", tf.__version__)
-print("TensorFlow file:", tf.__file__)
-print("Has tf.keras:", hasattr(tf, "keras"))
-print("=" * 60)
-
 from deepface import DeepFace
 import numpy as np
 import cv2
