@@ -8,24 +8,50 @@ logger= logging.getLogger(__name__)
 
 _DeepFace= None
 
+# def get_deepface():
+#     """
+#     Lazily import DeepFace.
+#     This prevents TensorFlow from loading during FastAPI startup.
+#     """
+#     global _DeepFace
+
+#     if _DeepFace is None:
+#         try:
+#             from deepface import DeepFace
+#             _DeepFace= DeepFace
+#             logger.info("DeepFace imported successfully.")
+#         except Exception:
+#             logger.exception("Failed to import DeepFace.")
+#             raise HTTPException(
+#                 status_code=500,
+#                 detail="Face recognition service is unavailable."
+#             )
+#     return _DeepFace
+
+import traceback
+
 def get_deepface():
-    """
-    Lazily import DeepFace.
-    This prevents TensorFlow from loading during FastAPI startup.
-    """
     global _DeepFace
 
     if _DeepFace is None:
         try:
             from deepface import DeepFace
-            _DeepFace= DeepFace
-            logger.info("DeepFace imported successfully.")
-        except Exception:
-            logger.exception("Failed to import DeepFace.")
+            _DeepFace = DeepFace
+            return _DeepFace
+
+        except Exception as e:
+            print("\n" + "=" * 60)
+            print("DEEPFACE IMPORT FAILED")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception: {e}")
+            traceback.print_exc()
+            print("=" * 60 + "\n")
+
             raise HTTPException(
                 status_code=500,
-                detail="Face recognition service is unavailable."
+                detail=str(e)   # TEMPORARY
             )
+
     return _DeepFace
 
 def generate_embedding(image_bytes: bytes) -> List[float]:

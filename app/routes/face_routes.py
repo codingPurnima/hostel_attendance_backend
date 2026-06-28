@@ -58,6 +58,20 @@ async def verify_face(
         "similarity": float(similarity)
     }
 
+# temporary endpoint for testing
+@router.get("/test-import")
+def test_import():
+    try:
+        from deepface import DeepFace
+        return {"message": "DeepFace imported successfully"}
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            "error": type(e).__name__,
+            "detail": str(e)
+        }
 
 # PART OF REGISTER ENDPOINT- INPUT MULTIPLE FILES WASN'T WORKING WITH SWAGGER, SO SKIPPED FOR THE TIME BEING, ADD LATER
     # embeddings= []
