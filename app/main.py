@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import auth_routes,face_routes, test_routes, attendance_routes, leave_routes, warden_routes, student_routes
+from app.routes import auth_routes, test_routes, attendance_routes, leave_routes, warden_routes, student_routes
 from app.database import Base, engine, SessionLocal
 from app import models
 from fastapi.middleware.cors import CORSMiddleware

@@ -1,9 +1,9 @@
-from deepface import DeepFace
 import numpy as np
 import cv2
 
 def generate_embedding(image_bytes):
-
+    from deepface import DeepFace
+    
     try:
         # convert bytes to image
         nparr = np.frombuffer(image_bytes, np.uint8)
