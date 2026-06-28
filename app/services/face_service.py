@@ -81,7 +81,7 @@ def generate_embedding(image_bytes: bytes) -> List[float]:
         # generate embedding
         result = DeepFace.represent(
             img_path = img,
-            model_name="Facenet512",
+            model_name="Facenet",
             detector_backend="opencv",
             enforce_detection = True
         )
