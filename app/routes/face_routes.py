@@ -17,8 +17,7 @@ async def register_face(
 ):
     image_bytes= await file.read()
     embedding= generate_embedding(image_bytes)
-    if embedding is None:
-        return {"error": "No valid face detected"}
+    
     current_user.face_embedding= str(embedding)
 
     db.add(current_user)

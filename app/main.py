@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import auth_routes, test_routes, attendance_routes, leave_routes, warden_routes, student_routes
+from app.routes import auth_routes,face_routes, test_routes, attendance_routes, leave_routes, warden_routes, student_routes
 from app.database import Base, engine, SessionLocal
 from app import models
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +24,7 @@ app.add_middleware(
 
 app.include_router(auth_routes.router, prefix= "/auth", tags=["Authentication"])
 app.include_router(test_routes.router, tags=["Test"])
-# app.include_router(face_routes.router, prefix="/face", tags=["Face"])
+app.include_router(face_routes.router, prefix="/face", tags=["Face"])
 app.include_router(attendance_routes.router,prefix="/attendance",  tags=["Attendance"])
 app.include_router(leave_routes.router, prefix="/leave", tags=["Leave"])
 app.include_router(warden_routes.router, prefix='/warden', tags=['Warden Routes'])
