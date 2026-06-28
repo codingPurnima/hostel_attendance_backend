@@ -5,6 +5,7 @@ from app.models.user import User
 from app.schemas.auth_schema import RegisterSchema, LoginSchema
 from app.core.security import decode_refresh_token, hash_password, verify_password, create_access_token, create_refresh_token
 from app.database import get_db
+from sqlalchemy.exc import SQLAlchemyError
 
 router= APIRouter()
 
@@ -22,8 +23,15 @@ def register_student(user: RegisterSchema, db: Session= Depends(get_db)):
         email= user.email,
         hashed_password= hash_password(user.password)
     )
-    db.add(new_user)
-    db.commit()
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+    except SQLAlchemyError as e:
+        db.rollback()
+        print(e)
+        raise
+    
 
     return {"message": "Resident registered successfully"}
 
