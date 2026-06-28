@@ -11,5 +11,5 @@ class User(Base):
     hashed_password = Column(String(200), nullable= False)
     status = Column(Enum(StudentStatusEnum), default=StudentStatusEnum.active, nullable= False)
     penalty_count = Column(Integer, default=0)
-    face_embedding= Column(String, nullable=False)
+    face_embedding= Column(String, nullable=True, default= "")
     role= Column(Enum(RoleEnum),default=RoleEnum.student, nullable=False)
