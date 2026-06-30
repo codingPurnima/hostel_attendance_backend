@@ -81,7 +81,7 @@ def test_model():
     img = np.zeros((160, 160, 3), dtype=np.uint8)
 
     try:
-        DeepFace.build_model("Facenet512")
+        DeepFace.build_model("Facenet")
         return {"status": "model loaded"}
 
     except Exception as e:
