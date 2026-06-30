@@ -17,13 +17,13 @@ def get_face_app():
             from insightface.app import FaceAnalysis
 
             _face_app = FaceAnalysis(
-                name="buffalo_l",
+                name="buffalo_s",
                 providers=["CPUExecutionProvider"]
             )
 
             _face_app.prepare(
                 ctx_id=0,
-                det_size=(640, 640)
+                det_size=(320, 320)
             )
 
             logger.info("InsightFace initialized successfully.")
