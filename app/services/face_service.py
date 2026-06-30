@@ -1,109 +1,87 @@
 from fastapi import HTTPException
-import numpy as np
 import cv2
+import numpy as np
 import logging
 from typing import List
 
-logger= logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-_DeepFace= None
+_face_app = None
 
-# def get_deepface():
-#     """
-#     Lazily import DeepFace.
-#     This prevents TensorFlow from loading during FastAPI startup.
-#     """
-#     global _DeepFace
 
-#     if _DeepFace is None:
-#         try:
-#             from deepface import DeepFace
-#             _DeepFace= DeepFace
-#             logger.info("DeepFace imported successfully.")
-#         except Exception:
-#             logger.exception("Failed to import DeepFace.")
-#             raise HTTPException(
-#                 status_code=500,
-#                 detail="Face recognition service is unavailable."
-#             )
-#     return _DeepFace
+def get_face_app():
+    global _face_app
 
-import traceback
-
-def get_deepface():
-    global _DeepFace
-
-    if _DeepFace is None:
+    if _face_app is None:
         try:
-            from deepface import DeepFace
-            _DeepFace = DeepFace
-            return _DeepFace
+            from insightface.app import FaceAnalysis
+
+            _face_app = FaceAnalysis(
+                name="buffalo_l",
+                providers=["CPUExecutionProvider"]
+            )
+
+            _face_app.prepare(
+                ctx_id=0,
+                det_size=(640, 640)
+            )
+
+            logger.info("InsightFace initialized successfully.")
 
         except Exception as e:
-            print("\n" + "=" * 60)
-            print("DEEPFACE IMPORT FAILED")
-            print(f"Exception type: {type(e).__name__}")
-            print(f"Exception: {e}")
-            traceback.print_exc()
-            print("=" * 60 + "\n")
+            logger.exception("Failed to initialize InsightFace")
 
             raise HTTPException(
                 status_code=500,
-                detail=str(e)   # TEMPORARY
+                detail=f"Face recognition initialization failed: {str(e)}"
             )
 
-    return _DeepFace
+    return _face_app
+
 
 def generate_embedding(image_bytes: bytes) -> List[float]:
-    """
-    Generates a facial embedding from an uploaded image.
-
-    Args:
-        image_bytes: Raw bytes of the uploaded image.
-
-    Returns:
-        A list of floats representing the facial embedding.
-    """
 
     try:
-        # convert bytes to image
+
         nparr = np.frombuffer(image_bytes, np.uint8)
+
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         if img is None:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid image uploaded"
+                detail="Invalid image uploaded."
             )
-        
-        DeepFace= get_deepface()
 
-        # generate embedding
-        result = DeepFace.represent(
-            img_path = img,
-            model_name="Facenet",
-            detector_backend="opencv",
-            enforce_detection = True
-        )
+        app = get_face_app()
 
-        if not result:
+        faces = app.get(img)
+
+        if len(faces) == 0:
             raise HTTPException(
                 status_code=400,
                 detail="No face detected."
             )
 
-        embedding = result[0]["embedding"]
+        if len(faces) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Multiple faces detected. Please upload an image with only one face."
+            )
+
+        embedding = faces[0].embedding.astype(np.float32)
 
         logger.info("Face embedding generated successfully.")
 
-        return embedding
-    
+        return embedding.tolist()
+
     except HTTPException:
         raise
 
-    except Exception:
+    except Exception as e:
         logger.exception("Unexpected error while generating embedding")
+
         raise HTTPException(
             status_code=500,
-            detail="Failed to generate face embedding"
+            detail=str(e)
         )
