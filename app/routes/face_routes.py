@@ -42,6 +42,11 @@ async def verify_face(
         )
     
 # ACCESS FROM DATABASE 
+    if not current_user.face_embedding:
+        raise HTTPException(
+            status_code=400, detail="Face not registered"
+        )
+    
     stored_embedding= ast.literal_eval(current_user.face_embedding)
 
     emb1= np.array(new_embedding)
@@ -57,41 +62,6 @@ async def verify_face(
         "match": bool(is_match),
         "similarity": float(similarity)
     }
-
-# temporary endpoint for testing
-@router.get("/test-import")
-def test_import():
-    try:
-        from deepface import DeepFace
-        return {"message": "DeepFace imported successfully"}
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {
-            "error": type(e).__name__,
-            "detail": str(e)
-        }
-
-@router.get("/test-model")
-def test_model():
-    from deepface import DeepFace
-    import numpy as np
-
-    img = np.zeros((160, 160, 3), dtype=np.uint8)
-
-    try:
-        DeepFace.build_model("Facenet")
-        return {"status": "model loaded"}
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {
-            "error": type(e).__name__,
-            "detail": str(e)
-        }
-
 
 # PART OF REGISTER ENDPOINT- INPUT MULTIPLE FILES WASN'T WORKING WITH SWAGGER, SO SKIPPED FOR THE TIME BEING, ADD LATER
     # embeddings= []
