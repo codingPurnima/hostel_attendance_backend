@@ -11,7 +11,7 @@ A secure hostel attendance and leave management backend built using FastAPI, MyS
 | Backend | FastAPI, Python |
 | Database | MySQL, SQLAlchemy |
 | Authentication | JWT, Passlib |
-| Face Recognition | OpenCV, DeepFace, NumPy |
+| Face Recognition | OpenCV, InsightFace, NumPy |
 
 ---
 
