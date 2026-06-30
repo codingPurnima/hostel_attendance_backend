@@ -49,11 +49,14 @@ async def verify_face(
     
     stored_embedding= ast.literal_eval(current_user.face_embedding)
 
-    emb1= np.array(new_embedding)
-    emb2= np.array(stored_embedding)
+    emb1= np.asarray(new_embedding, dtype=np.float32)
+    emb2= np.asarray(stored_embedding, dtype=np.float32)
+
+    emb1/= np.linalg.norm(emb1)
+    emb2/= np.linalg.norm(emb2)
 
 # COSINE SIMILARITY
-    similarity= np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
+    similarity= float(np.dot(emb1, emb2))
 
     THRESHOLD= 0.75
     is_match= bool(similarity> THRESHOLD)
