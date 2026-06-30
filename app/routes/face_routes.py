@@ -73,6 +73,26 @@ def test_import():
             "detail": str(e)
         }
 
+@router.get("/test-model")
+def test_model():
+    from deepface import DeepFace
+    import numpy as np
+
+    img = np.zeros((160, 160, 3), dtype=np.uint8)
+
+    try:
+        DeepFace.build_model("Facenet512")
+        return {"status": "model loaded"}
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            "error": type(e).__name__,
+            "detail": str(e)
+        }
+
+
 # PART OF REGISTER ENDPOINT- INPUT MULTIPLE FILES WASN'T WORKING WITH SWAGGER, SO SKIPPED FOR THE TIME BEING, ADD LATER
     # embeddings= []
 
