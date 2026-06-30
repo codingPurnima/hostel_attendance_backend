@@ -1,8 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends, Form, HTTPException
-from typing import List
 from app.core.security import get_current_user
 from app.services.face_service import generate_embedding
-from app.database import SessionLocal, get_db
+from app.database import get_db
 import numpy as np
 import ast
 
@@ -58,7 +57,7 @@ async def verify_face(
 # COSINE SIMILARITY
     similarity= float(np.dot(emb1, emb2))
 
-    THRESHOLD= 0.75
+    THRESHOLD= 0.70
     is_match= bool(similarity> THRESHOLD)
 
     return{
